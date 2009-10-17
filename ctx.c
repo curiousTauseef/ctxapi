@@ -26,6 +26,19 @@
 #include <usb.h>
 #include "ctxapi.h"
 
+static char const ctxParamsDesc[][3][22] = {
+ {"sd_dly", "Shutdown Delay", "seconds"},
+ {"dmt", "Dead Man Timer", "hours"},
+ {"dlyon", "Startup Delay", "seconds"},
+ {"bu_lo", "Bootup Lockout Time", "seconds"},
+ {"sd_lo", "Shutdown Lockout Time", "seconds"},
+ {"lobatt", "Low-battery Threshold", "volts"},
+ {"jumpers", "Jumpers", "bits"}, /* jumpers should be padded */
+ {"acpi_dly", "ACPI Delay", "seconds"},
+ {"acpi_dur", "ACPI Duration", "seconds"},
+ {"low_temp", "Low Temperature Limit", "degrees C"},
+ 0,
+};
 
 
 int ctxPrintValues(struct ctxValues * val)
@@ -104,13 +117,22 @@ int main(int argc, char ** argv)
     struct ctxValues val;
     struct ctxParams prm;
     char buf[25];
+    int param_id;
+    union { double d; unsigned char uc; } param_val;
 
     printf("Carnetix P2140 Linux Tool\nbrought to you by an evil wombat\nHere goes nothing...\n");
 
     if(argc == 1)
     {
         printf("Usage: %s COMMAND\n", argv[0]);
-        printf("Commands are:\n\t-pri-on \n\t-pri-off\n\t-sec-on\n\t-sec-off\n\t-p5v-on\n\t-p5v-off\n\t-stat\n\t-config\n");
+        printf("Commands are:\n\t-pri-on \n\t-pri-off\n\t-sec-on\n\t-sec-off\n\t-p5v-on\n\t-p5v-off\n\t-stat\n\t-config [<param> <value>]\n");
+
+        param_id = 0;
+        while (ctxParamsDesc[param_id][0][0]) {
+            printf("\t\t%s | %s (%s)\n", ctxParamsDesc[param_id][0], ctxParamsDesc[param_id][1],
+                   ctxParamsDesc[param_id][2]);
+            ++param_id;
+        }
         return -1;
     }
 
@@ -147,6 +169,36 @@ int main(int argc, char ** argv)
 
         if(ctxReadParams(hDev, &prm) == 0)
         {
+            if (argc == 4) 
+            {
+                param_id = 0;
+                while (ctxParamsDesc[param_id][0][0]) {
+                  if (!strcmp(argv[2], ctxParamsDesc[param_id][0])) {
+                      if (!strcmp(argv[2], "jumpers")) {
+                          int temp_val;
+                          if (!sscanf(argv[3], "%i", &temp_val)) {
+                              printf("Invalid value.\n");
+                              return -1;
+                          }
+                          param_val.uc = (unsigned char) temp_val;
+                      } else {
+                          if (!sscanf(argv[3], "%Lf", &param_val.d)) {
+                              printf("Invalid value.\n");
+                              return -1;
+                          }
+                      }
+
+                      ((double*) &prm)[param_id] = param_val.d;
+
+                      ctxWriteParams(hDev, &prm);
+                      ctxReadParams(hDev, &prm);
+
+                      break;
+                  }
+                  ++param_id;
+                }
+            }
+
             printf("\nPower Supply Configuration:\n");
             ctxPrintParams(&prm);
         } else
