@@ -182,10 +182,12 @@ int main(int argc, char ** argv)
                           }
                           param_val.uc = (unsigned char) temp_val;
                       } else {
-                          if (!sscanf(argv[3], "%Lf", &param_val.d)) {
+                          float temp_val;
+                          if (!sscanf(argv[3], "%f", &temp_val)) {
                               printf("Invalid value.\n");
                               return -1;
                           }
+                         param_val.d = (double) temp_val;
                       }
 
                       ((double*) &prm)[param_id] = param_val.d;
