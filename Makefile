@@ -1,16 +1,14 @@
-$(CC)=gcc
-LDFLAGS=lusb
-CFLAGS=-g
 all: ctx consolemon
 
 clean:
 	rm -f *.o *~ ctx consolemon
 
-ctx.o: ctxapi.h
-ctxapi.o: ctxapi.h
+ctxapi.o: ctxapi.c ctxapi.h
+	gcc -c ctxapi.c
 
-ctx: ctxapi.o ctx.o ctxapi.h
-	gcc -lusb ctx.o ctxapi.o -g -o ctx
+ctx: ctx.c ctxapi.o
+	gcc -o ctx ctx.c ctxapi.o -lusb
 
-consolemon: ctxapi.o ctxapi.h consolemon.o
-	gcc -lusb consolemon.o ctxapi.o -g -o consolemon 
+consolemon: consolemon.c ctxapi.o
+	gcc -o consolemon consolemon.c ctxapi.o -lusb
+

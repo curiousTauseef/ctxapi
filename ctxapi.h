@@ -13,7 +13,9 @@
  *                                                                           *
  ****************************************************************************/
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 
  /* Structure that holds the status and voltage/current readings
   * Counter and Fault Code are missing as of right now, since I do
@@ -89,15 +91,8 @@ struct ctxValues
 #define JUMPER_SHUTDOWN_MODE_STANDBY       0x40
 #define JUMPER_SHUTDOWN_MODE_LAPTOP        0x80
 
-/* Names of the states for the state field. These also came from the C# API */
-static const char * ctxStateNames[] =
-{
-    "Idle", "Power PSU", "Power PC", "Bootup Lockout", "Run PC", "Shutdown Delay",
-    "ACPI Pulse", "Shutdown Lockout", "Standby/Sleep", "Forced Shutdown", "Initialization"
-};
 
-
-/* Structure to store the supply parameters (configuration).
+/** Structure to store the supply parameters (configuration).
  * These are pretty much the same parameters as displayed by PSUmoni
  * This structure can be used for reading and writing parameters.
  * But, currently they are NOT range checked, so use at your own risk.
@@ -117,8 +112,7 @@ struct ctxParams
     double lowTemp;     /* in degrees C */
 };
 
-
-/*
+/**
  * Opens the device and returns a device handle. If the supply was not found
  * or somehow a connection could not be made, returns NULL.
  *
@@ -126,7 +120,7 @@ struct ctxParams
  */
 usb_dev_handle * ctxInit();
 
-/*
+/**
  * Fills the passed-in string buffer with a string representation of the
  * firmware version. Len is the length of the buffer passed in. The buffer
  * length must be at least 12 bytes, or nothing will happen and an error
@@ -138,7 +132,7 @@ usb_dev_handle * ctxInit();
 int ctxGetFWVersion(usb_dev_handle * hDev, char * buf, int len);
 
 
-/*
+/**
  * Polls the supply and fills the passed-in structure with the readings
  * from the supply. Returns 0 on success or -1 on error.
  *
@@ -147,7 +141,7 @@ int ctxGetFWVersion(usb_dev_handle * hDev, char * buf, int len);
  */
 int ctxReadValues(usb_dev_handle * hDev, struct ctxValues * val);
 
-/*
+/**
  * Polls the supply and fills the passed-in structure with the supply's
  * configuration parameters. Returns 0 on success or -1 on error.
  *
@@ -157,7 +151,7 @@ int ctxReadValues(usb_dev_handle * hDev, struct ctxValues * val);
 int ctxReadParams(usb_dev_handle * hDev, struct ctxParams * prm);
 
 
-/*
+/**
  * Writes the given parameters to the power supply. Returns 0 on success
  * and -1 on failure. The parameters are NOT range checked yet, so the values
  * must be within the proper range (I'm not sure what that is.. maybe the
@@ -173,49 +167,58 @@ int ctxReadParams(usb_dev_handle * hDev, struct ctxParams * prm);
 int ctxWriteParams(usb_dev_handle * hDev, struct ctxParams * prm);
 
 
-/*
+/**
  * Given the supply's device handle, turns on the Primary supply. Returns 0
  * on success and -1 on failure.
  */
 int ctxPriOn(usb_dev_handle * hDev);
 
 
-/*
+/**
  * Given the supply's device handle, turns off the Primary supply. Returns 0
  * on success and -1 on failure.
  */
 int ctxPriOff(usb_dev_handle * hDev);
 
 
-/*
+/**
  * Given the supply's device handle, turns on the Secondary supply. Returns 0
  * on success and -1 on failure.
  */
 int ctxSecOn(usb_dev_handle * hDev);
 
 
-/*
+/**
  * Given the supply's device handle, turns off the Secondary supply. Returns 0
  * on success and -1 on failure.
  */
 int ctxSecOff(usb_dev_handle * hDev);
 
 
-/*
+/**
  * Given the supply's device handle, turns on the P5V regulator. Returns 0
  * on success and -1 on failure.
  */
 int ctxP5VOn(usb_dev_handle * hDev);
 
 
-/*
+/**
  * Given the supply's device handle, turns off the P5V regulator. Returns 0
  * on success and -1 on failure.
  */
 int ctxP5VOff(usb_dev_handle * hDev);
 
 
-/*
+/**
  * Closes the given device handle, disconnecting from the power supply.
  */
 void ctxClose(usb_dev_handle * hDev);
+
+/**
+ *  Translates state name to text
+ */
+const char* ctxStateNameToText(int state);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif // __cplusplus

@@ -22,6 +22,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <usb.h>
 #include "ctxapi.h"
 
@@ -36,7 +37,7 @@ int ctxPrintValues(struct ctxValues * val)
     printf("Pri Voltage : %f V\nPri Current : %f A\n\n", val->priVoltage, val->priCurrent);
     printf("Sec Voltage : %f V\nSec Current : %f A\n\n", val->secVoltage, val->secCurrent);
     printf("Temperature : %f C\n", val->temperature);
-    printf("State: %d (%s)\n", val->state, ctxStateNames[val->state]);
+    printf("State: %d (%s)\n", val->state, ctxStateNameToText(val->state));
     printf("\nLED State (0x%04X):\n", val->ledValue);
     if(val->ledValue & LED_IGNITION)
         printf("\tIgnition\n");
@@ -70,6 +71,8 @@ int ctxPrintValues(struct ctxValues * val)
 
     if(val->ledValue & LED_SECCUR_OK)
         printf("\tSecondary Current OK\n");
+
+    return 0;
 }
 
 
@@ -90,6 +93,8 @@ int ctxPrintParams(struct ctxParams * prm)
     printf("ACPI Dly : %.1f sec\n", prm->acpiDelay);
     printf("ACPI Dur : %.1f sec\n", prm->acpiDuration);
     printf("Low Temp : %f C\n", prm->lowTemp);
+
+    return 0;
 }
 
 
@@ -102,6 +107,14 @@ int main(int argc, char ** argv)
 
     printf("Carnetix P2140 Linux Tool\nbrought to you by an evil wombat\nHere goes nothing...\n");
 
+    if(argc == 1)
+    {
+        printf("Usage: %s COMMAND\n", argv[0]);
+        printf("Commands are:\n\t-pri-on \n\t-pri-off\n\t-sec-on\n\t-sec-off\n\t-p5v-on\n\t-p5v-off\n\t-stat\n\t-config\n");
+        return -1;
+    }
+
+
     usb_dev_handle * hDev  = ctxInit();
 
     if(!hDev)
@@ -110,27 +123,89 @@ int main(int argc, char ** argv)
         return -1;
     }
 
-
-    printf("\nYou should probably upgrage to Firmware 1.8+ if you haven't already done so.\n\n");
-
-    ctxGetFWVersion(hDev, buf, 25);
-    printf("Firmware Version is: %s\n", buf);
-
-    if(ctxReadValues(hDev, &val) == 0)
+    if(strcmp(argv[1], "-stat") == 0)
     {
-    	printf("\nPower Supply Readings:\n");
-    	ctxPrintValues(&val);
-    } else
-    {
-        printf("Error reading values.\n");
-	ctxClose(hDev);
-	return -1;
+        ctxGetFWVersion(hDev, buf, 25);
+        printf("Firmware Version is: %s\n", buf);
+
+        if(ctxReadValues(hDev, &val) == 0)
+        {
+            printf("\nPower Supply Readings:\n");
+            ctxPrintValues(&val);
+        } else
+        {
+            printf("Error reading values.\n");
+            ctxClose(hDev);
+            return -1;
+        }
     }
 
-    ctxReadParams(hDev, &prm);
+    if(strcmp(argv[1], "-config") == 0)
+    {
+        ctxGetFWVersion(hDev, buf, 25);
+        printf("Firmware Version is: %s\n", buf);
 
-    printf("\nPower Supply Configuration:\n");
-    ctxPrintParams(&prm);
+        if(ctxReadParams(hDev, &prm) == 0)
+        {
+            printf("\nPower Supply Configuration:\n");
+            ctxPrintParams(&prm);
+        } else
+        {
+            printf("Error reading configuration.\n");
+            ctxClose(hDev);
+            return -1;
+        }
+    }
+
+    if(strcmp(argv[1], "-pri-on") == 0)
+    {
+        if(ctxPriOn(hDev) == 0)
+            printf("Primary supply on.\n");
+        else
+            printf("Error enabling primary supply.\n");
+    }
+
+
+    if(strcmp(argv[1], "-pri-off") == 0)
+    {
+        if(ctxPriOff(hDev) == 0)
+            printf("Primary supply off.\n... but for some reason we are still here.\n");
+        else
+            printf("Error disabling primary supply.\n");
+    }
+
+
+    if(strcmp(argv[1], "-sec-on") == 0)
+    {
+        if(ctxSecOn(hDev) == 0)
+            printf("Secondary supply on.\n");
+        else
+            printf("Error enabling secondary supply.\n");
+    }
+
+    if(strcmp(argv[1], "-sec-off") == 0)
+    {
+        if(ctxSecOff(hDev) == 0)
+            printf("Secondary supply off.\n");
+        else
+            printf("Error disabling secondary supply.\n");
+    }
+
+    if(strcmp(argv[1], "-p5v-on") == 0)
+    {
+        if(ctxP5VOn(hDev) == 0)
+            printf("P5V supply on.\n");
+        else
+            printf("Error enabling P5V supply.\n");
+    }
+
+    if(strcmp(argv[1], "-p5v-off") == 0)
+    {
+        if(ctxP5VOff(hDev) == 0)
+            printf("P5V supply off.\n");
+        else
+            printf("Error disabling P5V supply.\n");
+    }
 
     ctxClose(hDev);
     return 0;
