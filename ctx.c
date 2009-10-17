@@ -187,7 +187,7 @@ int main(int argc, char ** argv)
                               printf("Invalid value.\n");
                               return -1;
                           }
-                         param_val.d = (double) temp_val;
+                          param_val.d = (double) temp_val;
                       }
 
                       ((double*) &prm)[param_id] = param_val.d;
